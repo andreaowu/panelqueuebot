@@ -32,11 +32,17 @@ client.on('message', message => {
     return;
   }
 
-  if (message.channel.name.startsWith('ticket-') && message.content === CLOSE_COMMAND) {
+  const channelName = message.channel.name;
+  if (channelName.startsWith('ticket-') && message.content === CLOSE_COMMAND) {
     message.channel.delete();
+    message.guild.channels.cache.forEach(channel => {
+      if (channel.name.toLowerCase().includes(channelName.toLowerCase())) {
+        channel.delete();
+      }
+    });
   }
 
-  if (message.channel.name != CHANNEL_NAME) {
+  if (channelName != CHANNEL_NAME) {
     return;
   }
 
@@ -49,10 +55,20 @@ client.on('message', message => {
       queue.pop();
 
     case TICKET_COMMAND:
-      const user = queue.shift();
-      message.guild.channels.create(`ticket-${user.username}`, { type: 'text', }).then(channel => {
-        embedUser(user, channel, message.author);
-      });
+      if (queue.length > 0) {
+        const user = queue.shift();
+        const name = `ticket-${user.username}`;
+        const channels = message.guild.channels;
+        channels.create(name, { type: 'category'}).then(channel => {
+          channels.create(name, {type: 'text'}).then(textChannel => {
+            textChannel.setParent(channel.id);
+            embedUser(user, textChannel, message.author);
+          });
+          channels.create(name, {type: 'voice'}).then(voiceChannel => {
+            voiceChannel.setParent(channel.id);
+          });
+        });
+      }
 
     case CLEAR_COMMAND:
       queue = [];
