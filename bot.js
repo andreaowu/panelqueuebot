@@ -37,7 +37,7 @@ client.on('message', message => {
     message.channel.delete();
     message.guild.channels.cache.forEach(channel => {
       if (channel.name.toLowerCase().includes(channelName.toLowerCase())) {
-        channel.delete();
+        channel.delete().catch(() => {});
       }
     });
   }
@@ -57,7 +57,7 @@ client.on('message', message => {
     case TICKET_COMMAND:
       if (queue.length > 0) {
         const user = queue.shift();
-        const name = `ticket-${user.username}`;
+        const name = `ticket-${sanitizeUsername(user.username)}`;
         const channels = message.guild.channels;
         channels.create(name, { type: 'category'}).then(channel => {
           channels.create(name, {type: 'text'}).then(textChannel => {
@@ -155,4 +155,8 @@ function queueCommands() {
 function ticketCommands() {
   return TICKET_COMMAND + ": removes next person in queue and creates a ticket\n" +
     CLOSE_COMMAND + ": closes ticket";
+}
+
+function sanitizeUsername(name) {
+  return name.replace(/\W/g, '').toLowerCase();
 }
