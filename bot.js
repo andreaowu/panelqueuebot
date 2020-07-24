@@ -4,20 +4,26 @@ const client = new Discord.Client({partials: ['MESSAGE', 'CHANNEL', 'REACTION']}
 client.login(auth.token);
 
 const ADD = '❔';
-const CHANNEL_NAME = 'queue';
 const BOT_NAME = 'PanelQueue';
+const CHANNEL_NAME = 'queue';
+const EMBED_COLOR = '#0099ff';
+const ROLE = 'mod';
+
+// PRINTING
+const EMPTY_SPACE = '\u200b';
+const LINE = '------------------------------------------';
 
 // COMMANDS
-const VIEW_PANEL_COMMAND = '!cq';
-const NEXT_COMMAND = '!next';
-const TICKET_COMMAND = '!ticket';
 const CLOSE_COMMAND = '!close';
-const EMBED_COLOR = '#0099ff';
+const NEXT_COMMAND = '!next';
+const HELP_COMMAND = '!help';
+const TICKET_COMMAND = '!ticket';
+const VIEW_PANEL_COMMAND = '!cq';
 
 var queue = [];
 
 client.on('message', message => {
-  if (!message.member.roles.cache.some(role => role.name === 'mod')) {
+  if (!message.member.roles.cache.some(role => role.name === ROLE)) {
     return;
   }
 
@@ -30,14 +36,18 @@ client.on('message', message => {
   }
 
   switch(message.content) {
+    case HELP_COMMAND:
+      message.channel.send(embedHelp());
+      break;
+
+    case NEXT_COMMAND:
+      queue.pop();
+
     case TICKET_COMMAND:
       const user = queue.shift();
       message.guild.channels.create(`ticket-${user.username}`, { type: 'text', }).then(channel => {
         embedUser(user, channel, message.author);
       });
-
-    case NEXT_COMMAND:
-      queue.pop();
 
     default:
       addReactions(message.channel);
@@ -99,4 +109,26 @@ function clear(channel) {
 
 function embedUser(user, channel, messager) {
   channel.send(`@${user.username} Welcome! Please describe your question or issue. @${messager.username} is here to help you!`);
+}
+
+function embedHelp() {
+  return new Discord.MessageEmbed()
+	.setColor(EMBED_COLOR)
+	.setTitle('COMMANDS')
+	.setDescription(`Here are all the commands you can use if you have a ${ROLE} role`)
+	.addFields(
+		{ name: LINE + '\nGeneral\n' + LINE, value: "!help: shows all commands for this bot"},
+		{ name: LINE + '\nQueue\n' + LINE, value: queueCommands()},
+		{ name: LINE + '\nTicketing\n' + LINE, value: ticketCommands()},
+	)
+}
+
+function queueCommands() {
+  return VIEW_PANEL_COMMAND + ": shows panel to enable queueing and to view current line\n" +
+    NEXT_COMMAND + ": removes next person in the queue";
+}
+
+function ticketCommands() {
+  return TICKET_COMMAND + ": removes next person in queue and creates a ticket\n" +
+    CLOSE_COMMAND + ": closes ticket";
 }
