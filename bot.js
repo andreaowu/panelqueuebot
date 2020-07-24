@@ -1,3 +1,7 @@
+// add category + voice, close all
+// allow students to create chat rooms
+
+
 const Discord = require('discord.js');
 const auth = require('./auth.json');
 const client = new Discord.Client({partials: ['MESSAGE', 'CHANNEL', 'REACTION']});
@@ -14,6 +18,7 @@ const EMPTY_SPACE = '\u200b';
 const LINE = '------------------------------------------';
 
 // COMMANDS
+const CLEAR_COMMAND = '!clear';
 const CLOSE_COMMAND = '!close';
 const NEXT_COMMAND = '!next';
 const HELP_COMMAND = '!help';
@@ -48,6 +53,9 @@ client.on('message', message => {
       message.guild.channels.create(`ticket-${user.username}`, { type: 'text', }).then(channel => {
         embedUser(user, channel, message.author);
       });
+
+    case CLEAR_COMMAND:
+      queue = [];
 
     default:
       addReactions(message.channel);
