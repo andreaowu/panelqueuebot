@@ -31,10 +31,9 @@ client.on('message', message => {
 
   switch(message.content) {
     case TICKET_COMMAND:
-      //client.channels.cache.get(TICKETS_ID).send(`$new ${queue.pop()}`);
       const user = queue.shift();
       message.guild.channels.create(`ticket-${user.username}`, { type: 'text', }).then(channel => {
-        embedUser(user, channel);
+        embedUser(user, channel, message.author);
       });
 
     case NEXT_COMMAND:
@@ -98,6 +97,6 @@ function clear(channel) {
     .catch(err => {});
 }
 
-function embedUser(user, channel) {
-  channel.send(`@${user.username} Welcome! Please describe your question or issue.`);
+function embedUser(user, channel, messager) {
+  channel.send(`@${user.username} Welcome! Please describe your question or issue. @${messager.username} is here to help you!`);
 }
