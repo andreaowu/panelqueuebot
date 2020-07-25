@@ -16,11 +16,11 @@ Once the Discord bot is invited to a server, it will automatically create a **Pa
 There is a panel that will always be shown here, and it will be the only item shown. Inside the panel, the length of the line and the order of students in the line will be shown. Everyone in the server can also add and remove hemselves to and from the queue by reacting to the emoji below the panel.
 
 Instructors and/or TA's have permission to take students out of the queue using these two commands:
-```
-!next: removes next student from queue and refreshes panel
-!ticket: removes next student from queue, creates a category with a text and voice channel, 
-and notifies student from the text channel
-```
+#### !next
+Removes next student from queue and refreshes panel
+
+#### !ticket
+Removes next student from queue and creates a category with a text and voice channel. The text channel will notify both the student and the instructor/TA who removed the student from the queue.
 
 ### bot-help
 Only those with 'mod' roles will be able to see this channel. Students will not be able to access this, because the only action they'll be able to take is to get in and out of line. This channel is intended for the instructor(s) and TA's to see the bot's commands.
