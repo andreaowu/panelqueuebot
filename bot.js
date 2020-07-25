@@ -8,7 +8,6 @@ const client = new Discord.Client({partials: ['MESSAGE', 'CHANNEL', 'REACTION']}
 client.login(auth.token);
 
 const ADD = '❔';
-const BOT_NAME = 'PanelQueue';
 const CHANNEL_NAME = 'queue';
 const EMBED_COLOR = '#0099ff';
 const ROLE = 'mod';
@@ -34,6 +33,8 @@ client.on('message', message => {
 
   const serverId = message.guild.id;
   var queue = serverId in globalQueue ? globalQueue[serverId] : [];
+  console.log(queue);
+  console.log();
 
   const channelName = message.channel.name;
   if (channelName.startsWith('ticket-') && message.content === CLOSE_COMMAND) {
@@ -84,6 +85,9 @@ client.on('message', message => {
 });
 
 client.on('messageReactionAdd', async (reaction, user) => {
+  console.log("user");
+  console.log(user);
+  console.log();
   handleUser(reaction, user);
 });
 
@@ -92,20 +96,18 @@ client.on('messageReactionRemove', async (reaction, user) => {
 });
 
 function handleUser(reaction, user) {
-  const serverId = reaction.message.guild.id;
-  const queue = serverId in globalQueue ? globalQueue[serverId] : [];
+  if (!user.bot) {
+    const serverId = reaction.message.guild.id;
+    const queue = serverId in globalQueue ? globalQueue[serverId] : [];
 
-  globalQueue[serverId] = !queue.includes(user) ? 
-      updateQueue(user, reaction, queue, true) : updateQueue(user, reaction, queue, false);
+    globalQueue[serverId] = !queue.includes(user) ? 
+        updateQueue(user, reaction, queue, true) : updateQueue(user, reaction, queue, false);
+  }
 }
 
 function updateQueue(user, reaction, queue, isPush) {
-  const username = user.username;
-  if (username != BOT_NAME) {
-    const channel = reaction.message.channel;
-    addReactions(channel, queue);
-    isPush ? queue.push(user) : queue.splice(queue.indexOf(user), 1);
-  }
+  isPush ? queue.push(user) : queue.splice(queue.indexOf(user), 1);
+  addReactions(reaction.message.channel, queue);
   return queue;
 }
 
