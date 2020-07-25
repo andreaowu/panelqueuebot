@@ -28,29 +28,23 @@ const VIEW_PANEL_COMMAND = '!q';
 
 var globalQueue = {}; // maps guild id to queue
 
-client.on("ready", () => {
-  const servers = client.guilds.cache;
-  servers.forEach(server => {
-    if (!(server.id in globalQueue)) {
-      const channels = server.channels;
-
-      if (!channels.cache.filter(channel => channel.name == BOT_NAME).size) {
-        channels.create(BOT_NAME, {type: 'category'}).then(channel => {
-          channels.create(CHANNEL_NAME, {type: 'text'}).then(textChannel => {
-            textChannel.setParent(channel.id);
-            textChannel.send("Only use this channel to get in line and leave line.");
-            addReactions(textChannel, []);
-          });
-          channels.create(HELP_CHANNEL_NAME, {type: 'text'}).then(textChannel => {
-            textChannel.setParent(channel.id);
-            textChannel.send("Use this channel to get help from the bot.");
-            textChannel.send(embedHelp());
-          });
-        });
-      }
-      globalQueue[server.id] = [];
-    }
+//https://discord.com/api/oauth2/authorize?client_id=735918166470819850&permissions=8272&scope=bot
+client.on("guildCreate", guild => {
+  const channels = guild.channels;
+  
+  channels.create(BOT_NAME, {type: 'category'}).then(channel => {
+    channels.create(CHANNEL_NAME, {type: 'text'}).then(textChannel => {
+      textChannel.setParent(channel.id);
+      textChannel.send("Only use this channel to get in line and leave line.");
+      addReactions(textChannel, []);
+    });
+    channels.create(HELP_CHANNEL_NAME, {type: 'text'}).then(textChannel => {
+      textChannel.setParent(channel.id);
+      textChannel.send("Use this channel to get help from the bot.");
+      textChannel.send(embedHelp());
+    });
   });
+  globalQueue[guild.id] = [];
 });
 
 client.on('message', message => {
