@@ -22,7 +22,7 @@ const CLOSE_COMMAND = '!close';
 const NEXT_COMMAND = '!next';
 const HELP_COMMAND = '!help';
 const TICKET_COMMAND = '!ticket';
-const VIEW_PANEL_COMMAND = '!q';
+const QUEUE_COMMAND = '!q';
 
 var globalQueue = {}; // maps guild id to queue
 
@@ -120,6 +120,8 @@ client.on('message', message => {
   switch(message.content) {
     case NEXT_COMMAND:
       embedNext(queue.shift(), existingChannel(channels.cache, HELP_CHANNEL_NAME), message.author);
+      addReactions(message.channel, queue);
+      break;
 
     case TICKET_COMMAND:
       if (queue.length > 0) {
@@ -140,12 +142,17 @@ client.on('message', message => {
           });
         }
       }
+      addReactions(message.channel, queue);
+      break;
 
     case CLEAR_COMMAND:
       queue = [];
-
-    default:
       addReactions(message.channel, queue);
+      break;
+
+    case QUEUE_COMMAND:
+      addReactions(message.channel, queue);
+      break;
 
     globalQueue[serverId] = queue;
   }
@@ -200,8 +207,9 @@ function existingChannel(channels, name) {
 }
 
 function queueCommands() {
-  return VIEW_PANEL_COMMAND + ": shows panel to enable queueing and to view current line\n" +
-    NEXT_COMMAND + ": removes next person in the queue";
+  return QUEUE_COMMAND + ": shows panel to enable queueing and to view current line\n" +
+    NEXT_COMMAND + ": removes next person in the queue\n" +
+    CLEAR_COMMAND + ": clears queue";
 }
 
 function ticketCommands() {
