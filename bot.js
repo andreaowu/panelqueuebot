@@ -131,10 +131,29 @@ client.on('message', message => {
         if (existing) {
           embedUser(user, existing, message.author);
         } else {
-          channels.create(name, {type: 'category'}).then(channel => {
-            channels.create(name, {type: 'text'}).then(textChannel => {
-              textChannel.setParent(channel.id);
-              embedUser(user, textChannel, message.author);
+          channels.create(name, {
+            type: 'category',
+            permissionOverwrites: [
+              {
+                id: everyone,
+                deny: ['VIEW_CHANNEL'],
+              },
+              {
+                id: user.id,
+                allow: ['VIEW_CHANNEL'],
+              },
+              {
+                id: bot,
+                allow: ['VIEW_CHANNEL'],
+              },
+              {
+                id: mod,
+                allow: ['VIEW_CHANNEL'],
+              }
+            }).then(channel => {
+              channels.create(name, {type: 'text'}).then(textChannel => {
+                textChannel.setParent(channel.id);
+                embedUser(user, textChannel, message.author);
             });
             channels.create(name, {type: 'voice'}).then(voiceChannel => {
               voiceChannel.setParent(channel.id);
