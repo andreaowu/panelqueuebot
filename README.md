@@ -11,3 +11,11 @@ For labs, there is the same queue panel for students to get in or out of line, a
 To use the Discord bot, [here](https://discord.com/api/oauth2/authorize?client_id=735918166470819850&permissions=8272&scope=bot) is the invite link.
 
 Once the Discord bot is invited to a server, it will automatically create a **PanelQueue** category with two text channels: **queue** and **bot-help**.
+
+### queue
+There is a panel that will always be shown here, and it will be the only item shown. Inside the panel, the length of the line and the order of students in the line will be shown. Everyone in the server can also add and remove hemselves to and from the queue by reacting to the emoji below the panel.
+
+### bot-help
+Only those with 'mod' roles will be able to see this channel. Students will not be able to access this, because the only action they'll be able to take is to get in and out of line. This channel is intended for the instructor(s) and TA's to see the bot's commands.
+
+When a mod removes a student from the line, this channel will also receive a message saying who removed which student from line.
