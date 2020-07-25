@@ -29,7 +29,7 @@ var globalQueue = {}; // maps guild id to queue
 client.on("guildCreate", guild => {
   const channels = guild.channels;
   const roles = guild.roles.cache;
-  const everyone= roles.find(role => role.name === "@everyone").id;
+  const everyone = roles.find(role => role.name === "@everyone").id;
   const mod = roles.find(role => role.name === ROLE).id;
   const bot = roles.find(role => role.name === BOT_NAME).id;
 
@@ -64,7 +64,7 @@ client.on("guildCreate", guild => {
       channels.create(HELP_CHANNEL_NAME, 
         {
           type: 'text', 
-            permissionOverwrites: [
+          permissionOverwrites: [
             {
               id: everyone,
               deny: ['VIEW_CHANNEL'],
@@ -131,6 +131,11 @@ client.on('message', message => {
         if (existing) {
           embedUser(user, existing, message.author);
         } else {
+          const roles = message.guild.roles.cache;
+          const everyone = roles.find(role => role.name === "@everyone").id;
+          const mod = roles.find(role => role.name === ROLE).id;
+          const bot = roles.find(role => role.name === BOT_NAME).id;
+
           channels.create(name, {
             type: 'category',
             permissionOverwrites: [
@@ -150,11 +155,13 @@ client.on('message', message => {
                 id: mod,
                 allow: ['VIEW_CHANNEL'],
               }
-            }).then(channel => {
-              channels.create(name, {type: 'text'}).then(textChannel => {
-                textChannel.setParent(channel.id);
-                embedUser(user, textChannel, message.author);
+            ]
+          }).then(channel => {
+            channels.create(name, {type: 'text'}).then(textChannel => {
+              textChannel.setParent(channel.id);
+              embedUser(user, textChannel, message.author);
             });
+
             channels.create(name, {type: 'voice'}).then(voiceChannel => {
               voiceChannel.setParent(channel.id);
             });
