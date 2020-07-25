@@ -1,6 +1,4 @@
-// add category + voice, close all
-// allow students to create chat rooms
-
+//Invite link: https://discord.com/api/oauth2/authorize?client_id=735918166470819850&permissions=8272&scope=bot
 
 const Discord = require('discord.js');
 const auth = require('./auth.json');
@@ -28,7 +26,6 @@ const VIEW_PANEL_COMMAND = '!q';
 
 var globalQueue = {}; // maps guild id to queue
 
-//https://discord.com/api/oauth2/authorize?client_id=735918166470819850&permissions=8272&scope=bot
 client.on("guildCreate", guild => {
   const channels = guild.channels;
   
