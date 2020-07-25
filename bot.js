@@ -6,11 +6,17 @@ const client = new Discord.Client();
 client.login(auth.token);
 
 const ADD = '❔';
-const BOT_NAME = 'PanelQueue';
-const CHANNEL_NAME = 'queue';
-const HELP_CHANNEL_NAME = 'bot-help';
 const EMBED_COLOR = '#0099ff';
-const ROLE = 'mod';
+
+// MODS
+const EVERYONE = '@everyone';
+const MOD = 'mod';
+const BOT = 'PanelQueue';
+
+// CHANNELS
+const ARCHIVE_CHANNEL = "archive";
+const QUEUE_CHANNEL = 'queue';
+const HELP_CHANNEL = 'bot-help';
 
 // PRINTING
 const EMPTY_SPACE = '\u200b';
@@ -28,31 +34,28 @@ var globalQueue = {}; // maps guild id to queue
 
 client.on("guildCreate", guild => {
   const channels = guild.channels;
-  const roles = guild.roles.cache;
-  const everyone = roles.find(role => role.name === "@everyone").id;
-  const mod = roles.find(role => role.name === ROLE).id;
-  const bot = roles.find(role => role.name === BOT_NAME).id;
+  const roles = findAllRoles(guild.roles.cache);
 
-  if (!channels.cache.filter(channel => channel.name == BOT_NAME).size) {
-    channels.create(BOT_NAME, {type: 'category'}).then(channel => {
-      channels.create(CHANNEL_NAME,
+  if (!channels.cache.filter(channel => channel.name == BOT).size) {
+    channels.create(BOT, {type: 'category'}).then(channel => {
+      channels.create(QUEUE_CHANNEL,
         {
           type: 'text', 
           permissionOverwrites: [
             {
-              id: everyone,
+              id: roles[EVERYONE],
               allow: ['VIEW_CHANNEL', 'READ_MESSAGE_HISTORY'],
             },
             {
-              id: everyone,
+              id: roles[EVERYONE],
               deny: ['SEND_MESSAGES', 'MANAGE_CHANNEL'],
             },
             {
-              id: bot,
+              id: roles[BOT],
               allow: ['SEND_MESSAGES'],
             },
             {
-              id: mod,
+              id: roles[MOD],
               allow: ['SEND_MESSAGES'],
             }
           ],
@@ -61,20 +64,20 @@ client.on("guildCreate", guild => {
         textChannel.send("Only use this channel to get in line and leave line.");
         addReactions(textChannel, []);
       });
-      channels.create(HELP_CHANNEL_NAME, 
+      channels.create(HELP_CHANNEL, 
         {
           type: 'text', 
           permissionOverwrites: [
             {
-              id: everyone,
+              id: roles[EVERYONE],
               deny: ['VIEW_CHANNEL'],
             },
             {
-              id: bot,
+              id: roles[BOT],
               allow: ['VIEW_CHANNEL'],
             },
             {
-              id: mod,
+              id: roles[MOD],
               allow: ['VIEW_CHANNEL', 'MANAGE_CHANNEL'],
             }
           ],
@@ -84,12 +87,29 @@ client.on("guildCreate", guild => {
         textChannel.send(embedHelp());
       });
     });
+    channels.create(ARCHIVE_CHANNEL, {
+      type: 'category', 
+      permissionOverwrites: [
+        {
+          id: roles[EVERYONE],
+          deny: ['MANAGE_CHANNEL', 'SEND_MESSAGES'],
+        },
+        {
+          id: roles[BOT],
+          allow: ['VIEW_CHANNEL'],
+        },
+        {
+          id: roles[MOD],
+          allow: ['VIEW_CHANNEL', 'MANAGE_CHANNEL'],
+        }
+      ]
+    });
   }
   globalQueue[guild.id] = [];
 });
 
 client.on('message', message => {
-  if (!message.member.roles.cache.some(role => role.name === ROLE)) {
+  if (!message.member.roles.cache.some(role => role.name === MOD)) {
     return;
   }
 
@@ -97,29 +117,33 @@ client.on('message', message => {
   var queue = serverId in globalQueue ? globalQueue[serverId] : [];
 
   const channels = message.guild.channels;
+  const channelsList = channels.cache;
   const channelName = message.channel.name;
   if (channelName.startsWith('ticket-') && message.content === CLOSE_COMMAND) {
-    message.channel.delete();
-    channels.cache.forEach(channel => {
-      if (channel.name.toLowerCase().includes(channelName.toLowerCase())) {
+    const archiveChannel = channelsList.find(channel => equalChannelNames(channel.name, ARCHIVE_CHANNEL));
+    message.channel.setParent(archiveChannel.id);
+    message.channel.overwritePermissions([]);
+
+    channelsList.forEach(channel => {
+      if (equalChannelNames(channel.name, channelName) && (channel.type === 'voice' || channel.type === 'category')) {
         channel.delete().catch(() => {});
       }
     });
     return;
   }
 
-  if (channelName == HELP_CHANNEL_NAME && message.content === HELP_COMMAND) {
+  if (channelName == HELP_CHANNEL && message.content === HELP_COMMAND) {
     message.channel.send(embedHelp());
     return;
   }
 
-  if (channelName != CHANNEL_NAME) {
+  if (channelName != QUEUE_CHANNEL) {
     return;
   }
 
   switch(message.content) {
     case NEXT_COMMAND:
-      embedNext(queue.shift(), existingChannel(channels.cache, HELP_CHANNEL_NAME), message.author);
+      embedNext(queue.shift(), existingChannel(channelsList, HELP_CHANNEL), message.author);
       addReactions(message.channel, queue);
       break;
 
@@ -127,20 +151,17 @@ client.on('message', message => {
       if (queue.length > 0) {
         const user = queue.shift();
         const name = `ticket-${sanitizeUsername(user.username)}`;
-        const existing = existingChannel(channels.cache, name);
-        if (existing) {
+        const existing = existingChannel(channelsList, name);
+        if (existing && !equalChannelNames(existing.parent.name, ARCHIVE_CHANNEL)) {
           embedUser(user, existing, message.author);
         } else {
-          const roles = message.guild.roles.cache;
-          const everyone = roles.find(role => role.name === "@everyone").id;
-          const mod = roles.find(role => role.name === ROLE).id;
-          const bot = roles.find(role => role.name === BOT_NAME).id;
+          const roles = findAllRoles(message.guild.roles.cache);
 
           channels.create(name, {
             type: 'category',
             permissionOverwrites: [
               {
-                id: everyone,
+                id: roles[EVERYONE],
                 deny: ['VIEW_CHANNEL'],
               },
               {
@@ -148,16 +169,36 @@ client.on('message', message => {
                 allow: ['VIEW_CHANNEL'],
               },
               {
-                id: bot,
+                id: roles[BOT],
                 allow: ['VIEW_CHANNEL'],
               },
               {
-                id: mod,
+                id: roles[MOD],
                 allow: ['VIEW_CHANNEL'],
               }
             ]
           }).then(channel => {
-            channels.create(name, {type: 'text'}).then(textChannel => {
+            channels.create(name, {
+              type: 'text',
+              permissionOverwrites: [
+                {
+                  id: roles[EVERYONE],
+                  deny: ['VIEW_CHANNEL'],
+                },
+                {
+                  id: user.id,
+                  allow: ['VIEW_CHANNEL'],
+                },
+                {
+                  id: roles[BOT],
+                  allow: ['VIEW_CHANNEL'],
+                },
+                {
+                  id: roles[MOD],
+                  allow: ['VIEW_CHANNEL'],
+                }
+              ]
+            }).then(textChannel => {
               textChannel.setParent(channel.id);
               embedUser(user, textChannel, message.author);
             });
@@ -226,7 +267,7 @@ function clear(channel) {
 function existingChannel(channels, name) {
   for (channelMap of channels) {
     const channel = channelMap[1];
-    if (channel.name.toLowerCase().includes(name.toLowerCase()) && channel.type === 'text') {
+    if (equalChannelNames(channel.name, name) && channel.type === 'text') {
       return channel;
     }
   }
@@ -247,6 +288,22 @@ function sanitizeUsername(name) {
   return name.replace(/\W/g, '').toLowerCase();
 }
 
+function equalChannelNames(first, second) {
+  return first.toLowerCase() === second.toLowerCase();
+}
+
+function findRoleId(roles, name) {
+  return roles.find(role => role.name === name).id;
+}
+
+function findAllRoles(roles) {
+  return {
+    [EVERYONE]: findRoleId(roles, EVERYONE),
+    [MOD]: findRoleId(roles, MOD),
+    [BOT]: findRoleId(roles, BOT)
+  }
+}
+
 function embedQueue(queue) {
   return new Discord.MessageEmbed()
     .setColor(EMBED_COLOR)
@@ -264,7 +321,7 @@ function embedHelp() {
   return new Discord.MessageEmbed()
 	.setColor(EMBED_COLOR)
 	.setTitle('COMMANDS')
-	.setDescription(`Here are all the commands you can use if you have a ${ROLE} role`)
+	.setDescription(`Here are all the commands you can use if you have a ${MOD} role`)
 	.addFields(
 		{ name: LINE + '\nGeneral\n' + LINE, value: "!help: shows all commands for this bot"},
 		{ name: LINE + '\nQueue\n' + LINE, value: queueCommands()},
