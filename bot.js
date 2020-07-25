@@ -39,7 +39,7 @@ client.on("ready", () => {
           channels.create(CHANNEL_NAME, {type: 'text'}).then(textChannel => {
             textChannel.setParent(channel.id);
             textChannel.send("Only use this channel to get in line and leave line.");
-            textChannel.send(embedQueue([]));
+            textChannel.send(addReactions(textChannel, []));
           });
           channels.create(HELP_CHANNEL_NAME, {type: 'text'}).then(textChannel => {
             textChannel.setParent(channel.id);
