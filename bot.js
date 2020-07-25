@@ -25,12 +25,15 @@ const HELP_COMMAND = '!help';
 const TICKET_COMMAND = '!ticket';
 const VIEW_PANEL_COMMAND = '!cq';
 
-var queue = [];
+var globalQueue = {}; // maps guild id to queue
 
 client.on('message', message => {
   if (!message.member.roles.cache.some(role => role.name === ROLE)) {
     return;
   }
+
+  const serverId = message.guild.id;
+  var queue = serverId in globalQueue ? globalQueue[serverId] : [];
 
   const channelName = message.channel.name;
   if (channelName.startsWith('ticket-') && message.content === CLOSE_COMMAND) {
@@ -74,7 +77,9 @@ client.on('message', message => {
       queue = [];
 
     default:
-      addReactions(message.channel);
+      addReactions(message.channel, queue);
+
+    globalQueue[serverId] = queue;
   }
 });
 
@@ -87,23 +92,24 @@ client.on('messageReactionRemove', async (reaction, user) => {
 });
 
 function handleUser(reaction, user) {
-  if (!queue.includes(user)) {
-    updateQueue(user, reaction, true);
-  } else if (queue.includes(user)) {
-    updateQueue(user, reaction, false);
-  }
+  const serverId = reaction.message.guild.id;
+  const queue = serverId in globalQueue ? globalQueue[serverId] : [];
+
+  globalQueue[serverId] = !queue.includes(user) ? 
+      updateQueue(user, reaction, queue, true) : updateQueue(user, reaction, queue, false);
 }
 
-function updateQueue(user, reaction, isPush) {
+function updateQueue(user, reaction, queue, isPush) {
   const username = user.username;
   if (username != BOT_NAME) {
     const channel = reaction.message.channel;
+    addReactions(channel, queue);
     isPush ? queue.push(user) : queue.splice(queue.indexOf(user), 1);
-    addReactions(channel);
   }
+  return queue;
 }
 
-function embedQueue() {
+function embedQueue(queue) {
   return new Discord.MessageEmbed()
     .setColor(EMBED_COLOR)
     .setTitle('Queue!')
@@ -116,9 +122,9 @@ function embedQueue() {
     );
 }
 
-function addReactions(channel) {
+function addReactions(channel, queue) {
   clear(channel);
-  channel.send(embedQueue()).then(message => {
+  channel.send(embedQueue(queue)).then(message => {
     message.react(ADD);
   }).catch(() => {});
 }
