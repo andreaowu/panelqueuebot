@@ -45,7 +45,7 @@ client.on("guildCreate", guild => {
             },
             {
               id: everyone,
-              deny: ['SEND_MESSAGES'],
+              deny: ['SEND_MESSAGES', 'MANAGE_CHANNEL'],
             },
             {
               id: bot,
@@ -75,7 +75,7 @@ client.on("guildCreate", guild => {
             },
             {
               id: mod,
-              allow: ['VIEW_CHANNEL'],
+              allow: ['VIEW_CHANNEL', 'MANAGE_CHANNEL'],
             }
           ],
         }).then(textChannel => {
