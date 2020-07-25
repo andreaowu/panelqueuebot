@@ -116,13 +116,16 @@ client.on('message', message => {
   const serverId = message.guild.id;
   var queue = serverId in globalQueue ? globalQueue[serverId] : [];
 
+  const roles = findAllRoles(message.guild.roles.cache);
+
   const channels = message.guild.channels;
   const channelsList = channels.cache;
   const channelName = message.channel.name;
+
   if (channelName.startsWith('ticket-') && message.content === CLOSE_COMMAND) {
     const archiveChannel = channelsList.find(channel => equalChannelNames(channel.name, ARCHIVE_CHANNEL));
     message.channel.setParent(archiveChannel.id);
-    message.channel.overwritePermissions([]);
+    message.channel.overwritePermissions([{id: roles[EVERYONE], deny: ['SEND_MESSAGES']}]);
 
     channelsList.forEach(channel => {
       if (equalChannelNames(channel.name, channelName) && (channel.type === 'voice' || channel.type === 'category')) {
@@ -155,7 +158,6 @@ client.on('message', message => {
         if (existing && !equalChannelNames(existing.parent.name, ARCHIVE_CHANNEL)) {
           embedUser(user, existing, message.author);
         } else {
-          const roles = findAllRoles(message.guild.roles.cache);
 
           channels.create(name, {
             type: 'category',
