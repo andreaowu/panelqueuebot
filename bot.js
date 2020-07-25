@@ -9,6 +9,7 @@ client.login(auth.token);
 
 const ADD = '❔';
 const CHANNEL_NAME = 'queue';
+const HELP_CHANNEL_NAME = 'bot-help';
 const EMBED_COLOR = '#0099ff';
 const ROLE = 'mod';
 
@@ -21,8 +22,8 @@ const CLEAR_COMMAND = '!clear';
 const CLOSE_COMMAND = '!close';
 const NEXT_COMMAND = '!next';
 const HELP_COMMAND = '!help';
-const TICKET_COMMAND = '!t';
-const VIEW_PANEL_COMMAND = '!cq';
+const TICKET_COMMAND = '!ticket';
+const VIEW_PANEL_COMMAND = '!q';
 
 var globalQueue = {}; // maps guild id to queue
 
@@ -34,14 +35,21 @@ client.on('message', message => {
   const serverId = message.guild.id;
   var queue = serverId in globalQueue ? globalQueue[serverId] : [];
 
+  const channels = message.guild.channels;
   const channelName = message.channel.name;
   if (channelName.startsWith('ticket-') && message.content === CLOSE_COMMAND) {
     message.channel.delete();
-    message.guild.channels.cache.forEach(channel => {
+    channels.cache.forEach(channel => {
       if (channel.name.toLowerCase().includes(channelName.toLowerCase())) {
         channel.delete().catch(() => {});
       }
     });
+    return;
+  }
+
+  if (channelName == HELP_CHANNEL_NAME && message.content === HELP_COMMAND) {
+    message.channel.send(embedHelp());
+    return;
   }
 
   if (channelName != CHANNEL_NAME) {
@@ -49,18 +57,13 @@ client.on('message', message => {
   }
 
   switch(message.content) {
-    case HELP_COMMAND:
-      message.channel.send(embedHelp());
-      break;
-
     case NEXT_COMMAND:
-      queue.pop();
+      embedNext(queue.shift(), existingChannel(channels.cache, HELP_CHANNEL_NAME), message.author);
 
     case TICKET_COMMAND:
       if (queue.length > 0) {
         const user = queue.shift();
         const name = `ticket-${sanitizeUsername(user.username)}`;
-        const channels = message.guild.channels;
         const existing = existingChannel(channels.cache, name);
         if (existing) {
           embedUser(user, existing, message.author);
@@ -111,19 +114,6 @@ function updateQueue(user, reaction, queue, isPush) {
   return queue;
 }
 
-function embedQueue(queue) {
-  return new Discord.MessageEmbed()
-    .setColor(EMBED_COLOR)
-    .setTitle('Queue!')
-    .setDescription('Click on the ' + ADD + 'below to get in line and to leave the line')
-    .addFields(
-      {
-        name: 'Current Queue Length: ' + queue.length, 
-        value: queue.length > 0 ? queue.map((user, index) => `${index + 1} - ${user.username}\n`) : '\u200b'
-      },
-    );
-}
-
 function addReactions(channel, queue) {
   clear(channel);
   channel.send(embedQueue(queue)).then(message => {
@@ -139,10 +129,6 @@ function clear(channel) {
     .catch(err => {});
 }
 
-function embedUser(user, channel, messager) {
-  channel.send(`@${user.username} Welcome! Please describe your question or issue. @${messager.username} is here to help you!`);
-}
-
 function existingChannel(channels, name) {
   for (channelMap of channels) {
     const channel = channelMap[1];
@@ -150,18 +136,6 @@ function existingChannel(channels, name) {
       return channel;
     }
   }
-}
-
-function embedHelp() {
-  return new Discord.MessageEmbed()
-	.setColor(EMBED_COLOR)
-	.setTitle('COMMANDS')
-	.setDescription(`Here are all the commands you can use if you have a ${ROLE} role`)
-	.addFields(
-		{ name: LINE + '\nGeneral\n' + LINE, value: "!help: shows all commands for this bot"},
-		{ name: LINE + '\nQueue\n' + LINE, value: queueCommands()},
-		{ name: LINE + '\nTicketing\n' + LINE, value: ticketCommands()},
-	)
 }
 
 function queueCommands() {
@@ -176,4 +150,37 @@ function ticketCommands() {
 
 function sanitizeUsername(name) {
   return name.replace(/\W/g, '').toLowerCase();
+}
+
+function embedQueue(queue) {
+  return new Discord.MessageEmbed()
+    .setColor(EMBED_COLOR)
+    .setTitle('Queue!')
+    .setDescription('Click on the ' + ADD + 'below to get in line and to leave the line')
+    .addFields(
+      {
+        name: 'Current Queue Length: ' + queue.length, 
+        value: queue.length > 0 ? queue.map((user, index) => `${index + 1} - ${user.username}\n`) : '\u200b'
+      },
+    );
+}
+
+function embedHelp() {
+  return new Discord.MessageEmbed()
+	.setColor(EMBED_COLOR)
+	.setTitle('COMMANDS')
+	.setDescription(`Here are all the commands you can use if you have a ${ROLE} role`)
+	.addFields(
+		{ name: LINE + '\nGeneral\n' + LINE, value: "!help: shows all commands for this bot"},
+		{ name: LINE + '\nQueue\n' + LINE, value: queueCommands()},
+		{ name: LINE + '\nTicketing\n' + LINE, value: ticketCommands()},
+	)
+}
+
+function embedUser(user, channel, messager) {
+  channel.send(`@${user.username} Welcome! Please describe your question or issue. @${messager.username} is here to help you!`);
+}
+
+function embedNext(user, channel, messager) {
+  channel.send(`${user.username} is being helped by ${messager.username}.`);
 }
