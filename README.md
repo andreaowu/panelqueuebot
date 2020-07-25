@@ -22,7 +22,9 @@ Those with the 'mod' role (ie instructors and TA's) will be able to take student
 Removes next student from queue and refreshes panel the panel with the updated queue.
 
 #### !ticket
-Removes next student from queue and creates a category with a text and voice channel. The text channel will notify both the student and the instructor/TA who removed the student from the queue.
+Removes next student from queue and creates a category with a text and voice channel. The text channel will notify both the student and the instructor/TA who removed the student from the queue. Only the student and mods will be able to see these channels.
+
+When a ticket is resolved, use `!close` in the text channel of that ticket. This will delete the category and voice channels as well as move the ticket to Archive and be made read-only. 
 
 ### bot-help
 Only those with 'mod' role will be able to see this channel. Students will not be able to access this, because the only action they'll be able to take is to get in and out of line. This channel is intended for the instructor(s) and TA's to see the bot's commands, using `!help`.
