@@ -145,7 +145,7 @@ client.on('message', message => {
   }
 
   switch(message.content) {
-    case NEXT_COMMAND:
+   case NEXT_COMMAND:
       embedNext(queue.shift(), existingChannel(channelsList, HELP_CHANNEL), message.author);
 
     case TICKET_COMMAND:
@@ -229,6 +229,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
 });
 
 client.on('messageReactionRemove', async (reaction, user) => {
+  consoel.log("remove");
   handleUser(reaction, user);
 });
 
