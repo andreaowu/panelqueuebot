@@ -21,7 +21,7 @@ const CLEAR_COMMAND = '!clear';
 const CLOSE_COMMAND = '!close';
 const NEXT_COMMAND = '!next';
 const HELP_COMMAND = '!help';
-const TICKET_COMMAND = '!ticket';
+const TICKET_COMMAND = '!t';
 const VIEW_PANEL_COMMAND = '!cq';
 
 var globalQueue = {}; // maps guild id to queue
@@ -33,8 +33,6 @@ client.on('message', message => {
 
   const serverId = message.guild.id;
   var queue = serverId in globalQueue ? globalQueue[serverId] : [];
-  console.log(queue);
-  console.log();
 
   const channelName = message.channel.name;
   if (channelName.startsWith('ticket-') && message.content === CLOSE_COMMAND) {
@@ -63,15 +61,20 @@ client.on('message', message => {
         const user = queue.shift();
         const name = `ticket-${sanitizeUsername(user.username)}`;
         const channels = message.guild.channels;
-        channels.create(name, { type: 'category'}).then(channel => {
-          channels.create(name, {type: 'text'}).then(textChannel => {
-            textChannel.setParent(channel.id);
-            embedUser(user, textChannel, message.author);
+        const existing = existingChannel(channels.cache, name);
+        if (existing) {
+          embedUser(user, existing, message.author);
+        } else {
+          channels.create(name, { type: 'category'}).then(channel => {
+            channels.create(name, {type: 'text'}).then(textChannel => {
+              textChannel.setParent(channel.id);
+              embedUser(user, textChannel, message.author);
+            });
+            channels.create(name, {type: 'voice'}).then(voiceChannel => {
+              voiceChannel.setParent(channel.id);
+            });
           });
-          channels.create(name, {type: 'voice'}).then(voiceChannel => {
-            voiceChannel.setParent(channel.id);
-          });
-        });
+        }
       }
 
     case CLEAR_COMMAND:
@@ -85,9 +88,6 @@ client.on('message', message => {
 });
 
 client.on('messageReactionAdd', async (reaction, user) => {
-  console.log("user");
-  console.log(user);
-  console.log();
   handleUser(reaction, user);
 });
 
@@ -141,6 +141,15 @@ function clear(channel) {
 
 function embedUser(user, channel, messager) {
   channel.send(`@${user.username} Welcome! Please describe your question or issue. @${messager.username} is here to help you!`);
+}
+
+function existingChannel(channels, name) {
+  for (channelMap of channels) {
+    const channel = channelMap[1];
+    if (channel.name.toLowerCase().includes(name.toLowerCase()) && channel.type === 'text') {
+      return channel;
+    }
+  }
 }
 
 function embedHelp() {
