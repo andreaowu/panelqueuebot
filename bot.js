@@ -147,8 +147,6 @@ client.on('message', message => {
   switch(message.content) {
     case NEXT_COMMAND:
       embedNext(queue.shift(), existingChannel(channelsList, HELP_CHANNEL), message.author);
-      addReactions(message.channel, queue);
-      break;
 
     case TICKET_COMMAND:
       if (queue.length > 0) {
@@ -211,17 +209,16 @@ client.on('message', message => {
           });
         }
       }
-      addReactions(message.channel, queue);
-      break;
 
     case CLEAR_COMMAND:
       queue = [];
-      addReactions(message.channel, queue);
-      break;
 
     case QUEUE_COMMAND:
       addReactions(message.channel, queue);
       break;
+
+    default:
+      addReactions(message.channel, queue);
 
     globalQueue[serverId] = queue;
   }
