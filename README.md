@@ -18,7 +18,8 @@ There is a panel that will always be shown here, and it will be the only item sh
 Instructors and/or TA's have permission to take students out of the queue using these two commands:
 ```
 !next: removes next student from queue and refreshes panel
-!ticket: removes next student from queue, creates a category with a text and voice channel, and notifies student from the text channel
+!ticket: removes next student from queue, creates a category with a text and voice channel, 
+and notifies student from the text channel
 ```
 
 ### bot-help
