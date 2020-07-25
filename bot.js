@@ -4,10 +4,11 @@
 
 const Discord = require('discord.js');
 const auth = require('./auth.json');
-const client = new Discord.Client({partials: ['MESSAGE', 'CHANNEL', 'REACTION']});
+const client = new Discord.Client();
 client.login(auth.token);
 
 const ADD = '❔';
+const BOT_NAME = 'PanelQueue';
 const CHANNEL_NAME = 'queue';
 const HELP_CHANNEL_NAME = 'bot-help';
 const EMBED_COLOR = '#0099ff';
@@ -26,6 +27,31 @@ const TICKET_COMMAND = '!ticket';
 const VIEW_PANEL_COMMAND = '!q';
 
 var globalQueue = {}; // maps guild id to queue
+
+client.on("ready", () => {
+  const servers = client.guilds.cache;
+  servers.forEach(server => {
+    if (!(server.id in globalQueue)) {
+      const channels = server.channels;
+
+      if (!channels.cache.filter(channel => channel.name == BOT_NAME).size) {
+        channels.create(BOT_NAME, {type: 'category'}).then(channel => {
+          channels.create(CHANNEL_NAME, {type: 'text'}).then(textChannel => {
+            textChannel.setParent(channel.id);
+            textChannel.send("Only use this channel to get in line and leave line.");
+            textChannel.send(embedQueue([]));
+          });
+          channels.create(HELP_CHANNEL_NAME, {type: 'text'}).then(textChannel => {
+            textChannel.setParent(channel.id);
+            textChannel.send("Use this channel to get help from the bot.");
+            textChannel.send(embedHelp());
+          });
+        });
+      }
+      globalQueue[server.id] = [];
+    }
+  });
+});
 
 client.on('message', message => {
   if (!message.member.roles.cache.some(role => role.name === ROLE)) {
@@ -68,7 +94,7 @@ client.on('message', message => {
         if (existing) {
           embedUser(user, existing, message.author);
         } else {
-          channels.create(name, { type: 'category'}).then(channel => {
+          channels.create(name, {type: 'category'}).then(channel => {
             channels.create(name, {type: 'text'}).then(textChannel => {
               textChannel.setParent(channel.id);
               embedUser(user, textChannel, message.author);
