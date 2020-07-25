@@ -28,19 +28,63 @@ var globalQueue = {}; // maps guild id to queue
 
 client.on("guildCreate", guild => {
   const channels = guild.channels;
-  
-  channels.create(BOT_NAME, {type: 'category'}).then(channel => {
-    channels.create(CHANNEL_NAME, {type: 'text'}).then(textChannel => {
-      textChannel.setParent(channel.id);
-      textChannel.send("Only use this channel to get in line and leave line.");
-      addReactions(textChannel, []);
+  const roles = guild.roles.cache;
+  const everyone= roles.find(role => role.name === "@everyone").id;
+  const mod = roles.find(role => role.name === ROLE).id;
+  const bot = roles.find(role => role.name === BOT_NAME).id;
+
+  if (!channels.cache.filter(channel => channel.name == BOT_NAME).size) {
+    channels.create(BOT_NAME, {type: 'category'}).then(channel => {
+      channels.create(CHANNEL_NAME,
+        {
+          type: 'text', 
+          permissionOverwrites: [
+            {
+              id: everyone,
+              allow: ['VIEW_CHANNEL', 'READ_MESSAGE_HISTORY'],
+            },
+            {
+              id: everyone,
+              deny: ['SEND_MESSAGES'],
+            },
+            {
+              id: bot,
+              allow: ['SEND_MESSAGES'],
+            },
+            {
+              id: mod,
+              allow: ['SEND_MESSAGES'],
+            }
+          ],
+        }).then(textChannel => {
+        textChannel.setParent(channel.id);
+        textChannel.send("Only use this channel to get in line and leave line.");
+        addReactions(textChannel, []);
+      });
+      channels.create(HELP_CHANNEL_NAME, 
+        {
+          type: 'text', 
+            permissionOverwrites: [
+            {
+              id: everyone,
+              deny: ['VIEW_CHANNEL'],
+            },
+            {
+              id: bot,
+              allow: ['VIEW_CHANNEL'],
+            },
+            {
+              id: mod,
+              allow: ['VIEW_CHANNEL'],
+            }
+          ],
+        }).then(textChannel => {
+        textChannel.setParent(channel.id);
+        textChannel.send("Use this channel to get help from the bot.");
+        textChannel.send(embedHelp());
+      });
     });
-    channels.create(HELP_CHANNEL_NAME, {type: 'text'}).then(textChannel => {
-      textChannel.setParent(channel.id);
-      textChannel.send("Use this channel to get help from the bot.");
-      textChannel.send(embedHelp());
-    });
-  });
+  }
   globalQueue[guild.id] = [];
 });
 
