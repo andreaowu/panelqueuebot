@@ -1,7 +1,6 @@
 //Invite link: https://discord.com/api/oauth2/authorize?client_id=735918166470819850&permissions=8272&scope=bot
 
 const Discord = require('discord.js');
-const auth = require('./auth.json');
 const client = new Discord.Client();
 client.login(process.env.token);
 
