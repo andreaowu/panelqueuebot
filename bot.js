@@ -3,7 +3,7 @@
 const Discord = require('discord.js');
 const auth = require('./auth.json');
 const client = new Discord.Client();
-client.login(auth.token);
+client.login(process.env.token);
 
 const ADD = '❔';
 const EMBED_COLOR = '#0099ff';
