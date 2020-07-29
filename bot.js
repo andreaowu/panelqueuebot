@@ -2,7 +2,8 @@
 
 const Discord = require('discord.js');
 const client = new Discord.Client();
-client.login(process.env.token);
+const auth = require('./auth.json');
+client.login(auth.token);
 
 const ADD = '❔';
 const EMBED_COLOR = '#0099ff';
@@ -228,12 +229,11 @@ client.on('messageReactionAdd', async (reaction, user) => {
 });
 
 client.on('messageReactionRemove', async (reaction, user) => {
-  consoel.log("remove");
   handleUser(reaction, user);
 });
 
 function handleUser(reaction, user) {
-  if (!user.bot) {
+  if (reaction.message.channel.name === QUEUE_CHANNEL && !user.bot) {
     const serverId = reaction.message.guild.id;
     const queue = serverId in globalQueue ? globalQueue[serverId] : [];
 
