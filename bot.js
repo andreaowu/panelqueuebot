@@ -2,8 +2,9 @@
 
 const Discord = require('discord.js');
 const client = new Discord.Client();
-// const auth = require('./auth.json');
-client.login(process.env.token);
+const auth = require('./auth.json');
+client.login(auth.token);
+//client.login(process.env.token);
 
 const ADD = '❔';
 const EMBED_COLOR = '#0099ff';
@@ -125,7 +126,7 @@ client.on('message', message => {
   if (channelName.startsWith('ticket-') && message.content === CLOSE_COMMAND) {
     const archiveChannel = channelsList.find(channel => equalChannelNames(channel.name, ARCHIVE_CHANNEL));
     message.channel.setParent(archiveChannel.id);
-    message.channel.overwritePermissions([{id: roles[EVERYONE], deny: ['SEND_MESSAGES']}]);
+    message.channel.overwritePermissions([{id: roles[EVERYONE], deny: ['SEND_MESSAGES', 'VIEW_CHANNEL']}]);
 
     channelsList.forEach(channel => {
       if (equalChannelNames(channel.name, channelName) && (channel.type === 'voice' || channel.type === 'category')) {
@@ -156,54 +157,41 @@ client.on('message', message => {
         if (existing && !equalChannelNames(existing.parent.name, ARCHIVE_CHANNEL)) {
           embedUser(user, existing, message.author);
         } else {
+          const newChannelPermissions = [
+            {
+              id: roles[EVERYONE],
+              deny: ['VIEW_CHANNEL'],
+            },
+            {
+              id: user.id,
+              allow: ['VIEW_CHANNEL'],
+            },
+            {
+              id: roles[BOT],
+              allow: ['VIEW_CHANNEL'],
+            },
+            {
+              id: roles[MOD],
+              allow: ['VIEW_CHANNEL'],
+            }
+          ];
 
           channels.create(name, {
             type: 'category',
-            permissionOverwrites: [
-              {
-                id: roles[EVERYONE],
-                deny: ['VIEW_CHANNEL'],
-              },
-              {
-                id: user.id,
-                allow: ['VIEW_CHANNEL'],
-              },
-              {
-                id: roles[BOT],
-                allow: ['VIEW_CHANNEL'],
-              },
-              {
-                id: roles[MOD],
-                allow: ['VIEW_CHANNEL'],
-              }
-            ]
+            permissionOverwrites: newChannelPermissions
           }).then(channel => {
             channels.create(name, {
               type: 'text',
-              permissionOverwrites: [
-                {
-                  id: roles[EVERYONE],
-                  deny: ['VIEW_CHANNEL'],
-                },
-                {
-                  id: user.id,
-                  allow: ['VIEW_CHANNEL'],
-                },
-                {
-                  id: roles[BOT],
-                  allow: ['VIEW_CHANNEL'],
-                },
-                {
-                  id: roles[MOD],
-                  allow: ['VIEW_CHANNEL'],
-                }
-              ]
+              permissionOverwrites: newChannelPermissions
             }).then(textChannel => {
               textChannel.setParent(channel.id);
               embedUser(user, textChannel, message.author);
             });
 
-            channels.create(name, {type: 'voice'}).then(voiceChannel => {
+            channels.create(name, {
+              type: 'voice',
+              permissionOverwrites: newChannelPermissions
+            }).then(voiceChannel => {
               voiceChannel.setParent(channel.id);
             });
           });
