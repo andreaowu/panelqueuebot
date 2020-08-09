@@ -124,6 +124,7 @@ client.on('message', message => {
   const channelName = message.channel.name;
 
   if (channelName.startsWith('ticket-') && message.content === CLOSE_COMMAND) {
+    message.delete();
     const archiveChannel = channelsList.find(channel => equalChannelNames(channel.name, ARCHIVE_CHANNEL));
     message.channel.setParent(archiveChannel.id);
     message.channel.overwritePermissions([{id: roles[EVERYONE], deny: ['SEND_MESSAGES', 'VIEW_CHANNEL']}]);
@@ -133,6 +134,7 @@ client.on('message', message => {
         channel.delete().catch(() => {});
       }
     });
+    message.delete();
     return;
   }
 
