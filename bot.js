@@ -2,7 +2,8 @@
 
 const Discord = require('discord.js');
 const client = new Discord.Client();
-client.login(process.env.token);
+const auth = require('./auth.json');
+client.login(auth.token);
 
 const ADD = '❔';
 const EMBED_COLOR = '#0099ff';
@@ -122,7 +123,7 @@ client.on('message', message => {
   const channelName = message.channel.name;
 
   if (channelName.startsWith('ticket-') && message.content === CLOSE_COMMAND) {
-    const archiveChannel = channelsList.find(channel => equalChannelNames(channel.name, ARCHIVE_CHANNEL));
+    const archiveChannel = channelsList.find(channel => equalChannelNames(channel.name, ARCHIVE_CHANNEL);
     message.channel.setParent(archiveChannel.id);
     message.channel.overwritePermissions([{id: roles[EVERYONE], deny: ['SEND_MESSAGES']}]);
 
