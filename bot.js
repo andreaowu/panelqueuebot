@@ -123,7 +123,7 @@ client.on('message', message => {
   const channelName = message.channel.name;
 
   if (channelName.startsWith('ticket-') && message.content === CLOSE_COMMAND) {
-    const archiveChannel = channelsList.find(channel => equalChannelNames(channel.name, ARCHIVE_CHANNEL);
+    const archiveChannel = channelsList.find(channel => equalChannelNames(channel.name, ARCHIVE_CHANNEL));
     message.channel.setParent(archiveChannel.id);
     message.channel.overwritePermissions([{id: roles[EVERYONE], deny: ['SEND_MESSAGES']}]);
 
