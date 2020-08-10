@@ -169,7 +169,7 @@ client.on('message', message => {
             },
             {
               id: roles[BOT],
-              allow: ['VIEW_CHANNEL'],
+              allow: ['VIEW_CHANNEL', 'SEND_MESSAGES'],
             },
             {
               id: roles[MOD],
@@ -181,13 +181,19 @@ client.on('message', message => {
             type: 'category',
             permissionOverwrites: newChannelPermissions
           }).then(channel => {
-            channels.create(name, {
-              type: 'text',
-              permissionOverwrites: newChannelPermissions
-            }).then(textChannel => {
-              textChannel.setParent(channel.id);
-              embedUser(user, textChannel, message.author);
-            });
+            if (existing && equalChannelNames(existing.parent.name, ARCHIVE_CHANNEL)) {
+              existing.overwritePermissions(newChannelPermissions);
+              embedUser(user, existing, message.author);
+              existing.setParent(channel.id);
+            } else {
+              channels.create(name, {
+                type: 'text',
+                permissionOverwrites: newChannelPermissions
+              }).then(textChannel => {
+                textChannel.setParent(channel.id);
+                embedUser(user, textChannel, message.author);
+              });
+            }
 
             channels.create(name, {
               type: 'voice',
