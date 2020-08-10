@@ -2,9 +2,9 @@
 
 const Discord = require('discord.js');
 const client = new Discord.Client();
-//const auth = require('./auth.json');
-//client.login(auth.token);
-client.login(process.env.token);
+const auth = require('./auth.json');
+client.login(auth.token);
+//client.login(process.env.token);
 
 const ADD = '❔';
 const EMBED_COLOR = '#0099ff';
@@ -18,6 +18,7 @@ const BOT = 'PanelQueue';
 const ARCHIVE_CHANNEL = "archive";
 const QUEUE_CHANNEL = 'queue';
 const HELP_CHANNEL = 'bot-help';
+const EXAM_CHANNEL_PREFIX = 'test-';
 
 // PRINTING
 const EMPTY_SPACE = '\u200b';
@@ -29,6 +30,8 @@ const CLOSE_COMMAND = '!close';
 const NEXT_COMMAND = '!next';
 const HELP_COMMAND = '!help';
 const TICKET_COMMAND = '!ticket';
+const EXAM_COMMAND = "!exam";
+const EXAM_END_COMMAND = "!end";
 const QUEUE_COMMAND = '!q';
 
 var globalQueue = {}; // maps guild id to queue
@@ -117,7 +120,8 @@ client.on('message', message => {
   const serverId = message.guild.id;
   var queue = serverId in globalQueue ? globalQueue[serverId] : [];
 
-  const roles = findAllRoles(message.guild.roles.cache);
+  const cacheRoles = message.guild.roles.cache;
+  const roles = findAllRoles(cacheRoles);
 
   const channels = message.guild.channels;
   const channelsList = channels.cache;
@@ -146,37 +150,71 @@ client.on('message', message => {
     return;
   }
 
-  switch(message.content) {
-   case NEXT_COMMAND:
+  const newChannelPermissions = [
+    {
+      id: roles[EVERYONE],
+      deny: ['VIEW_CHANNEL'],
+    },
+    {
+      id: roles[BOT],
+      allow: ['VIEW_CHANNEL', 'SEND_MESSAGES'],
+    },
+    {
+      id: roles[MOD],
+      allow: ['VIEW_CHANNEL'],
+    }
+  ];
+
+  const spaceIndex = message.content.indexOf(" ");
+  switch(message.content.substring(0, spaceIndex > 0 ? spaceIndex : message.content.length)) {
+    case NEXT_COMMAND:
       embedNext(queue.shift(), existingChannel(channelsList, HELP_CHANNEL), message.author);
+
+    case EXAM_COMMAND:
+      const role = message.content.substring(message.content.indexOf(" ") + 1, message.content.length);
+      const roleId = findRoleId(cacheRoles, role);
+      cacheRoles.get(roleId).members.map(member => {
+        const name = `${EXAM_CHANNEL_PREFIX}${sanitizeUsername(member.displayName)}`;
+        newChannelPermissions.push({
+          id: member.id,
+          allow: ['VIEW_CHANNEL'],
+        });
+
+        channels.create(name, {
+          type: 'category',
+          permissionOverwrites: newChannelPermissions
+        }).then(channel => {
+          channels.create(name, {
+            type: 'voice',
+            permissionOverwrites: newChannelPermissions
+          }).then(voiceChannel => {
+            voiceChannel.setParent(channel.id);
+          });
+        });
+
+        newChannelPermissions.pop();
+      });
+
+    case EXAM_END_COMMAND:
+      channelsList.forEach(channel => {
+        if (channel.name.startsWith(EXAM_CHANNEL_PREFIX) && (channel.type === 'voice' || channel.type === 'category')) {
+          channel.delete().catch(() => {});
+        }
+      });
 
     case TICKET_COMMAND:
       if (queue.length > 0) {
         const user = queue.shift();
+        newChannelPermissions.push({
+          id: user.id,
+          allow: ['VIEW_CHANNEL'],
+        });
+
         const name = `ticket-${sanitizeUsername(user.username)}`;
         const existing = existingChannel(channelsList, name);
         if (existing && !equalChannelNames(existing.parent.name, ARCHIVE_CHANNEL)) {
           embedUser(user, existing, message.author);
         } else {
-          const newChannelPermissions = [
-            {
-              id: roles[EVERYONE],
-              deny: ['VIEW_CHANNEL'],
-            },
-            {
-              id: user.id,
-              allow: ['VIEW_CHANNEL'],
-            },
-            {
-              id: roles[BOT],
-              allow: ['VIEW_CHANNEL', 'SEND_MESSAGES'],
-            },
-            {
-              id: roles[MOD],
-              allow: ['VIEW_CHANNEL'],
-            }
-          ];
-
           channels.create(name, {
             type: 'category',
             permissionOverwrites: newChannelPermissions
