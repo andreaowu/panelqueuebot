@@ -2,9 +2,9 @@
 
 const Discord = require('discord.js');
 const client = new Discord.Client();
-const auth = require('./auth.json');
-client.login(auth.token);
-//client.login(process.env.token);
+// const auth = require('./auth.json');
+// client.login(auth.token);
+client.login(process.env.token);
 
 const ADD = '❔';
 const EMBED_COLOR = '#0099ff';
@@ -128,9 +128,9 @@ client.on('message', message => {
   const channelName = message.channel.name;
 
   if (channelName.startsWith('ticket-') && message.content === CLOSE_COMMAND) {
+    message.channel.updateOverwrite(message.channel.guild.roles.everyone, {'SEND_MESSAGES': false, 'VIEW_CHANNEL': false});
     const archiveChannel = channelsList.find(channel => equalChannelNames(channel.name, ARCHIVE_CHANNEL));
     message.channel.setParent(archiveChannel.id);
-    message.channel.updateOverwrite(message.channel.guild.roles.everyone, {'SEND_MESSAGES': false, 'VIEW_CHANNEL': false});
 
     channelsList.forEach(channel => {
       if (equalChannelNames(channel.name, channelName) && (channel.type === 'voice' || channel.type === 'category')) {
@@ -175,24 +175,25 @@ client.on('message', message => {
       const roleId = findRoleId(cacheRoles, role);
       cacheRoles.get(roleId).members.map(member => {
         const name = `${EXAM_CHANNEL_PREFIX}${sanitizeUsername(member.displayName)}`;
-        newChannelPermissions.push({
-          id: member.id,
-          allow: ['VIEW_CHANNEL'],
-        });
+        const memberPermissions = [
+          ...newChannelPermissions, 
+          {
+            id: member.id,
+            allow: ['VIEW_CHANNEL'],
+          }
+        ];
 
         channels.create(name, {
           type: 'category',
-          permissionOverwrites: newChannelPermissions
+          permissionOverwrites: memberPermissions
         }).then(channel => {
           channels.create(name, {
             type: 'voice',
-            permissionOverwrites: newChannelPermissions
+            permissionOverwrites: memberPermissions
           }).then(voiceChannel => {
             voiceChannel.setParent(channel.id);
           });
         });
-
-        newChannelPermissions.pop();
       });
 
     case EXAM_END_COMMAND:
