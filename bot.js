@@ -169,6 +169,7 @@ client.on('message', message => {
   switch(message.content.substring(0, spaceIndex > 0 ? spaceIndex : message.content.length)) {
     case NEXT_COMMAND:
       embedNext(queue.shift(), existingChannel(channelsList, HELP_CHANNEL), message.author);
+      break;
 
     case EXAM_COMMAND:
       const role = message.content.substring(message.content.indexOf(" ") + 1, message.content.length);
@@ -195,6 +196,7 @@ client.on('message', message => {
           });
         });
       });
+      break;
 
     case EXAM_END_COMMAND:
       channelsList.forEach(channel => {
@@ -202,6 +204,7 @@ client.on('message', message => {
           channel.delete().catch(() => {});
         }
       });
+      break;
 
     case TICKET_COMMAND:
       if (queue.length > 0) {
@@ -243,16 +246,13 @@ client.on('message', message => {
           });
         }
       }
+      break;
 
     case CLEAR_COMMAND:
       queue = [];
-
-    case QUEUE_COMMAND:
-      addReactions(message.channel, queue);
       break;
 
-    default:
-      addReactions(message.channel, queue);
+    addReactions(message.channel, queue);
 
     globalQueue[serverId] = queue;
   }
