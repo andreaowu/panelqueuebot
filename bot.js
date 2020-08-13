@@ -2,9 +2,9 @@
 
 const Discord = require('discord.js');
 const client = new Discord.Client();
-// const auth = require('./auth.json');
-// client.login(auth.token);
-client.login(process.env.token);
+const auth = require('./auth.json');
+client.login(auth.token);
+//client.login(process.env.token);
 
 const ADD = '❔';
 const EMBED_COLOR = '#0099ff';
@@ -251,11 +251,10 @@ client.on('message', message => {
     case CLEAR_COMMAND:
       queue = [];
       break;
-
-    addReactions(message.channel, queue);
-
-    globalQueue[serverId] = queue;
   }
+  addReactions(message.channel, queue);
+
+  globalQueue[serverId] = queue;
 });
 
 client.on('messageReactionAdd', async (reaction, user) => {
@@ -286,15 +285,14 @@ function addReactions(channel, queue) {
   clear(channel);
   channel.send(embedQueue(queue)).then(message => {
     message.react(ADD);
-  }).catch(() => {});
+  });
 }
 
 function clear(channel) {
   channel.messages.fetch({limit: 99})
     .then(fetched => {
       channel.bulkDelete(fetched);
-    })
-    .catch(err => {});
+    });
 }
 
 function existingChannel(channels, name) {
